@@ -2,6 +2,7 @@ import numpy as np
 
 def legal_moves(start_row, start_col, board: np.ndarray):
     fields = []
+
     board_height = board.shape[0]
     board_width = board.shape[1]
 
@@ -16,73 +17,45 @@ def legal_moves(start_row, start_col, board: np.ndarray):
     diag_upper_left = board[start_row::-1,start_col::-1].diagonal()
     diag2 = np.concatenate((diag_lower_right[1:], diag_upper_left))
 
+    lines = ((row,"row"), (col,"col"), (diag1,"diag1"),
+             (diag2,"diag2"))
 
-    pieces_in_row = 0
-    for i in row:
-        if i != 'N':
-            pieces_in_row += 1
-
-    new_col = start_col + pieces_in_row
-    if new_col >= 0 and new_col < board_width:
-        fields.append((start_row, new_col))
-
-    new_col = start_col - pieces_in_row
-    if new_col >= 0 and new_col < board_width:
-        fields.append((start_row, new_col))
-
-    pieces_in_col = 0
-    for i in col:
-        if i != 'N':
-            pieces_in_col += 1
-
-    new_row = start_row + pieces_in_col
-    if new_row >= 0 and new_row < board_height:
-        fields.append((new_row, start_col))
-
-    new_row = start_row - pieces_in_col
-    if new_row >= 0 and new_row < board_height:
-        fields.append((new_row, start_col))
-
-    pieces_in_diag1 = 0
-    for i in diag1:
-        if i != 'N':
-            pieces_in_diag1 += 1
-
-    new_row = start_row - pieces_in_diag1
-    new_col = start_col + pieces_in_diag1
-    if new_row >= 0 and new_row < board_height and new_col >= 0 and new_col < board_width:
-        fields.append((new_row, new_col))
-
-    new_row = start_row + pieces_in_diag1
-    new_col = start_col - pieces_in_diag1
-    if new_row >= 0 and new_row < board_height and new_col >= 0 and new_col < board_width:
-        fields.append((new_row, new_col))
-
-    pieces_in_diag2 = 0
-    for i in diag2:
-        if i != 'N':
-            pieces_in_diag2 += 1
-
-    new_row = start_row - pieces_in_diag2
-    new_col = start_col - pieces_in_diag2
-    if new_row >= 0 and new_row < board_height and new_col >= 0 and new_col < board_width:
-        fields.append((new_row, new_col))
-
-    new_row = start_row + pieces_in_diag2
-    new_col = start_col + pieces_in_diag2
-    if new_row >= 0 and new_row < board_height and new_col >= 0 and new_col < board_width:
-        fields.append((new_row, new_col))
-
-    new_fields = []
-    for field_row, field_col in fields:
-        if board[start_row, start_col] != board[field_row, field_col]:
-            new_fields.append((field_row, field_col))
+    for line in lines:
+        pieces_in_line = 0
+        for i in line[0]:
+            if i != 'N':
+                pieces_in_line += 1
 
 
+        new_positions = []
 
-    return new_fields
+        line_type = line[1]
+        if line_type == "row":
+            new_positions.append((start_row,start_col+pieces_in_line))
+            new_positions.append((start_row,start_col-pieces_in_line))
+        elif line_type == "col":
+            new_positions.append((start_row+pieces_in_line,start_col))
+            new_positions.append((start_row-pieces_in_line,start_col))
+        elif line_type == "diag1":
+            new_positions.append((start_row-pieces_in_line,start_col+pieces_in_line))
+            new_positions.append((start_row+pieces_in_line,start_col-pieces_in_line))
+        elif line_type == "diag2":
+            new_positions.append((start_row+pieces_in_line,start_col+pieces_in_line))
+            new_positions.append((start_row-pieces_in_line,start_col-pieces_in_line))
+
+        for row_index, col_index in new_positions:
+            is_in_vertical_bounds = row_index >= 0 and row_index < board_height
+            is_in_horizontal_bounds = col_index >= 0 and col_index < board_width
+
+            not_on_ally_piece = False
+            if is_in_vertical_bounds and is_in_horizontal_bounds:
+                not_on_ally_piece = board[start_row, start_col] != board[row_index, col_index]
+
+            if not_on_ally_piece:
+                fields.append((row_index,col_index))
 
 
+    return fields
 
 
 def is_move_legal(start_row, start_col, dest_row, dest_col, board) -> bool:
