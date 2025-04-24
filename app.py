@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from flask import Flask, request
+from flask_cors import CORS
 import numpy as np
 
 import game
@@ -10,6 +11,7 @@ start_board[[0,-1],1:-1] = 1
 start_board[1:-1,[0,-1]] = 2
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/api/board/')
 def get_board():

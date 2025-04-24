@@ -114,6 +114,6 @@ def computer_move(board) -> np.ndarray:
     best_move = moves[0]
 
     board[best_move[0],best_move[1]] = "N"
-    board[best_move[2][0],best_move[2][1]] = "W"
+    board[best_move[2][0][0],best_move[2][0][1]] = "W"
 
     return board
