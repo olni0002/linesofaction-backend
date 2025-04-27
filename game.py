@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 def legal_moves(start_row, start_col, board: np.ndarray):
     fields = []
@@ -95,25 +96,92 @@ def is_move_legal(start_row, start_col, dest_row, dest_col, board) -> bool:
     else:
         return False
 
-def computer_move(board) -> np.ndarray:
+# def computer_move(board) -> np.ndarray:
 
+#     board = np.array(board, dtype="U1")
+#     piece_coordinates = []
+
+#     for row_index, row in enumerate(board):
+#         for col_index, field in enumerate(row):
+#             if board[row_index, col_index] == 'W':
+#                 piece_coordinates.append((row_index, col_index))
+
+#     moves = []
+#     for row_index, col_index in piece_coordinates:
+#         dest = legal_moves(row_index, col_index, board)
+
+#         moves.append((row_index, col_index, dest))
+
+#     best_move = moves[0]
+
+#     board[best_move[0],best_move[1]] = "N"
+#     board[best_move[2][0][0],best_move[2][0][1]] = "W"
+
+#     return board
+
+def computer_move(board):
     board = np.array(board, dtype="U1")
-    piece_coordinates = []
+    score, best_move = minimax(board, depth=2, maximizing_player=True)
 
-    for row_index, row in enumerate(board):
-        for col_index, field in enumerate(row):
-            if board[row_index, col_index] == 'W':
-                piece_coordinates.append((row_index, col_index))
+    if best_move is None:
+        return board
 
-    moves = []
-    for row_index, col_index in piece_coordinates:
-        dest = legal_moves(row_index, col_index, board)
-
-        moves.append((row_index, col_index, dest))
-
-    best_move = moves[0]
-
-    board[best_move[0],best_move[1]] = "N"
-    board[best_move[2][0][0],best_move[2][0][1]] = "W"
-
+    (start_row, start_col), (dest_row, dest_col) = best_move
+    board[start_row, start_col] = "N"
+    board[dest_row, dest_col] = "W"
     return board
+
+def all_possible_moves(board, player):
+    board = np.array(board, dtype="U1")
+    moves = []
+    for row in range(8):
+        for col in range(8):
+            if board[row, col] == player:
+                for dest_row, dest_col in legal_moves(row, col, board):
+                    moves.append(((row, col), (dest_row, dest_col)))
+    return moves
+
+
+def apply_move(board, move):
+    board_copy = copy.deepcopy(board)
+    (start_row, start_col), (dest_row, dest_col) = move
+    board_copy[dest_row, dest_col] = board_copy[start_row, start_col]
+    board_copy[start_row, start_col] = "N"
+    return board_copy
+
+def evaluate_board(board):
+    # Midlertidig: Oliver skal erstatte dette med heuristik, eller bare brug whatever han kalder sin.
+    white_pieces = np.sum(board == "W")
+    black_pieces = np.sum(board == "B")
+    return white_pieces - black_pieces
+
+def minimax(board, depth, maximizing_player):
+    if depth == 0 or game_over(board):
+        return evaluate_board(board), None
+
+    best_move = None
+
+    if maximizing_player:
+        max_eval = -float('inf')
+        for move in all_possible_moves(board, "W"):
+            new_board = apply_move(board, move)
+            eval, _ = minimax(new_board, depth-1, False)
+            if eval > max_eval:
+                max_eval = eval
+                best_move = move
+        return max_eval, best_move
+    else:
+        min_eval = float('inf')
+        for move in all_possible_moves(board, "B"):
+            new_board = apply_move(board, move)
+            eval, _ = minimax(new_board, depth-1, True)
+            if eval < min_eval:
+                min_eval = eval
+                best_move = move
+        return min_eval, best_move
+
+def game_over(board):
+    #Dummy version, vi skal lave et regelsæt ift gameover
+    white_pieces = np.sum(board == "W")
+    black_pieces = np.sum(board == "B")
+    return white_pieces == 0 or black_pieces == 0
