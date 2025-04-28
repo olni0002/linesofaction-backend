@@ -6,9 +6,12 @@ import numpy as np
 
 import game
 
-start_board = np.zeros((8,8), dtype="uint8")
-start_board[[0,-1],1:-1] = 1
-start_board[1:-1,[0,-1]] = 2
+# Ændret til at den bruger 'W' og 'B' i stedet for '1' og '2' for at være konsistent med den øvrige kode
+start_board = np.full((8, 8), 'N', dtype="U1")
+start_board[0, 1:-1] = 'W'
+start_board[-1, 1:-1] = 'W'
+start_board[1:-1, 0] = 'B'
+start_board[1:-1, -1] = 'B'
 
 app = Flask(__name__)
 CORS(app)

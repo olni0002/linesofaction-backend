@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 
+
 def legal_moves(start_row, start_col, board: np.ndarray):
     fields = []
     board_height = board.shape[0]
@@ -83,9 +84,6 @@ def legal_moves(start_row, start_col, board: np.ndarray):
 
     return new_fields
 
-
-
-
 def is_move_legal(start_row, start_col, dest_row, dest_col, board) -> bool:
     board = np.array(board, dtype="U1")
 
@@ -121,7 +119,7 @@ def is_move_legal(start_row, start_col, dest_row, dest_col, board) -> bool:
 
 def computer_move(board):
     board = np.array(board, dtype="U1")
-    score, best_move = minimax(board, depth=2, maximizing_player=True)
+    score, best_move = minimax(board, depth=2, alpha=-float('inf'), beta=float('inf'), maximizing_player=True)
 
     if best_move is None:
         return board
@@ -141,7 +139,6 @@ def all_possible_moves(board, player):
                     moves.append(((row, col), (dest_row, dest_col)))
     return moves
 
-
 def apply_move(board, move):
     board_copy = copy.deepcopy(board)
     (start_row, start_col), (dest_row, dest_col) = move
@@ -155,7 +152,7 @@ def evaluate_board(board):
     black_pieces = np.sum(board == "B")
     return white_pieces - black_pieces
 
-def minimax(board, depth, maximizing_player):
+def minimax(board, depth, alpha, beta, maximizing_player):
     if depth == 0 or game_over(board):
         return evaluate_board(board), None
 
@@ -165,19 +162,25 @@ def minimax(board, depth, maximizing_player):
         max_eval = -float('inf')
         for move in all_possible_moves(board, "W"):
             new_board = apply_move(board, move)
-            eval, _ = minimax(new_board, depth-1, False)
+            eval, _ = minimax(new_board, depth-1, alpha, beta, False)
             if eval > max_eval:
                 max_eval = eval
                 best_move = move
+            alpha = max(alpha, eval)
+            if beta <= alpha: #Implementing alpha-beta pruning
+                break #Beta cutoff
         return max_eval, best_move
     else:
         min_eval = float('inf')
         for move in all_possible_moves(board, "B"):
             new_board = apply_move(board, move)
-            eval, _ = minimax(new_board, depth-1, True)
+            eval, _ = minimax(new_board, depth-1, alpha, beta, True)
             if eval < min_eval:
                 min_eval = eval
                 best_move = move
+            beta = min(beta, eval) 
+            if beta <= alpha: #Implementing alpha-beta pruning
+                break #Alpha cutoff
         return min_eval, best_move
 
 def game_over(board):
