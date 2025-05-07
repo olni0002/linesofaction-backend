@@ -4,7 +4,7 @@ import copy
 
 def legal_moves(start_row, start_col, board: np.ndarray):
     moves = []
- 
+
     player = board[start_row, start_col]
     opponent = "W" if player == "B" else "B"
 
@@ -105,9 +105,16 @@ def board_static_evaluation(board: np.ndarray) -> int:
         [-80, -25, -20, -20, -20, -20, -25, -80]
     ])
 
-    score = np.sum(field_values * (board == "W")) - np.sum(field_values * (board == "B"))
+    is_white = board == "W"
+    is_black = board == "B"
 
-    return score
+    white_count = np.count_nonzero(is_white)
+    black_count = np.count_nonzero(is_black)
+
+    white_score = np.sum(field_values * is_white) / white_count
+    black_score = np.sum(field_values * is_black) / black_count
+
+    return white_score - black_score
 
 def is_move_legal(start_row, start_col, dest_row, dest_col, board) -> bool:
     board = np.array(board, dtype="U1")
@@ -199,7 +206,7 @@ def minimax(board, depth, alpha, beta, maximizing_player):
             if eval < min_eval:
                 min_eval = eval
                 best_move = move
-            beta = min(beta, eval) 
+            beta = min(beta, eval)
             if beta <= alpha: #Implementing alpha-beta pruning
                 break #Alpha cutoff
         return min_eval, best_move
