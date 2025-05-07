@@ -3,91 +3,114 @@ import copy
 
 
 def legal_moves(start_row, start_col, board: np.ndarray):
-    fields = []
+    moves = []
+ 
+    player = board[start_row, start_col]
+    opponent = "W" if player == "B" else "B"
+
     board_height = board.shape[0]
     board_width = board.shape[1]
 
     row = board[start_row]
     col = board[:,start_col]
 
-    diag_lower_left = board[start_row:,start_col::-1].diagonal()
-    diag_upper_right = board[start_row::-1,start_col:].diagonal()
-    diag1 = np.concatenate((diag_lower_left[1:], diag_upper_right))
+    main_offset = start_col - start_row
+    main_diag = board.diagonal(main_offset)
+    main_diag_len = len(main_diag)
 
-    diag_lower_right = board[start_row:,start_col:].diagonal()
-    diag_upper_left = board[start_row::-1,start_col::-1].diagonal()
-    diag2 = np.concatenate((diag_lower_right[1:], diag_upper_left))
+    rot_row = start_col
+    rot_col = board_height - 1 - start_row
+    anti_offset = rot_col - rot_row
+    anti_diag = np.rot90(board, k=3).diagonal(anti_offset)
+    anti_diag_len = len(anti_diag)
 
+    pos_in_main = -1
+    if main_offset >= 0:
+        pos_in_main = start_row
+    elif main_offset < 0:
+        pos_in_main = start_col
 
-    pieces_in_row = 0
-    for i in row:
-        if i != 'N':
-            pieces_in_row += 1
+    pos_in_anti = -1
+    if anti_offset >= 0:
+        pos_in_anti = rot_row
+    elif anti_offset < 0:
+        pos_in_anti = rot_col
 
-    new_col = start_col + pieces_in_row
-    if new_col >= 0 and new_col < board_width:
-        fields.append((start_row, new_col))
+    line_attributes = (
+        (row, "row", board_width, start_col),
+        (col, "col", board_height, start_row),
+        (main_diag, "main_diag", main_diag_len, pos_in_main),
+        (anti_diag, "anti_diag", anti_diag_len, pos_in_anti)
+    )
 
-    new_col = start_col - pieces_in_row
-    if new_col >= 0 and new_col < board_width:
-        fields.append((start_row, new_col))
+    for line, type, length, pos in line_attributes:
+        jumps = np.count_nonzero(line != "N")
 
-    pieces_in_col = 0
-    for i in col:
-        if i != 'N':
-            pieces_in_col += 1
+        forward = pos + jumps
+        in_bounds = forward < length
 
-    new_row = start_row + pieces_in_col
-    if new_row >= 0 and new_row < board_height:
-        fields.append((new_row, start_col))
+        if in_bounds:
+            not_on_ally = line[forward] != player
+            if not_on_ally:
+                not_over_opponent = False
+                for i in range(pos+1, forward):
+                    if line[i] == opponent:
+                        break
+                else:
+                    not_over_opponent = True
 
-    new_row = start_row - pieces_in_col
-    if new_row >= 0 and new_row < board_height:
-        fields.append((new_row, start_col))
+                if not_over_opponent:
+                    if type == "row":
+                        moves.append((start_row,forward))
+                    elif type == "col":
+                        moves.append((forward,start_col))
+                    elif type == "main_diag":
+                        moves.append((start_row+jumps,start_col+jumps))
+                    elif type == "anti_diag":
+                        moves.append((start_row-jumps,start_col+jumps))
 
-    pieces_in_diag1 = 0
-    for i in diag1:
-        if i != 'N':
-            pieces_in_diag1 += 1
+        backwards = pos - jumps
+        in_bounds = backwards >= 0
 
-    new_row = start_row - pieces_in_diag1
-    new_col = start_col + pieces_in_diag1
-    if new_row >= 0 and new_row < board_height and new_col >= 0 and new_col < board_width:
-        fields.append((new_row, new_col))
+        if in_bounds:
+            not_on_ally = line[backwards] != player
+            if not_on_ally:
+                not_over_opponent = False
+                for i in range(pos-1, backwards, -1):
+                    if line[i] == opponent:
+                        break
+                else:
+                    not_over_opponent = True
 
-    new_row = start_row + pieces_in_diag1
-    new_col = start_col - pieces_in_diag1
-    if new_row >= 0 and new_row < board_height and new_col >= 0 and new_col < board_width:
-        fields.append((new_row, new_col))
+                if not_over_opponent:
+                    if type == "row":
+                        moves.append((start_row,backwards))
+                    elif type == "col":
+                        moves.append((backwards,start_col))
+                    elif type == "main_diag":
+                        moves.append((start_row-jumps,start_col-jumps))
+                    elif type == "anti_diag":
+                        moves.append((start_row+jumps,start_col-jumps))
+    return moves
 
-    pieces_in_diag2 = 0
-    for i in diag2:
-        if i != 'N':
-            pieces_in_diag2 += 1
+def board_static_evaluation(board: np.ndarray) -> int:
+    field_values = np.array([
+        [-80, -25, -20, -20, -20, -20, -25, -80],
+        [-25,  10,  10,  10,  10,  10,  10, -25],
+        [-20,  10,  25,  25,  25,  25,  10, -20],
+        [-20,  10,  25,  50,  50,  25,  10, -20],
+        [-20,  10,  25,  50,  50,  25,  10, -20],
+        [-20,  10,  25,  25,  25,  25,  10, -20],
+        [-25,  10,  10,  10,  10,  10,  10, -25],
+        [-80, -25, -20, -20, -20, -20, -25, -80]
+    ])
 
-    new_row = start_row - pieces_in_diag2
-    new_col = start_col - pieces_in_diag2
-    if new_row >= 0 and new_row < board_height and new_col >= 0 and new_col < board_width:
-        fields.append((new_row, new_col))
+    score = np.sum(field_values * (board == "W")) - np.sum(field_values * (board == "B"))
 
-    new_row = start_row + pieces_in_diag2
-    new_col = start_col + pieces_in_diag2
-    if new_row >= 0 and new_row < board_height and new_col >= 0 and new_col < board_width:
-        fields.append((new_row, new_col))
-
-    new_fields = []
-    for field_row, field_col in fields:
-        if board[start_row, start_col] != board[field_row, field_col]:
-            new_fields.append((field_row, field_col))
-
-
-
-    return new_fields
+    return score
 
 def is_move_legal(start_row, start_col, dest_row, dest_col, board) -> bool:
     board = np.array(board, dtype="U1")
-
-
 
     if (dest_row, dest_col) in legal_moves(start_row, start_col, board):
         return True
@@ -119,7 +142,7 @@ def is_move_legal(start_row, start_col, dest_row, dest_col, board) -> bool:
 
 def computer_move(board):
     board = np.array(board, dtype="U1")
-    score, best_move = minimax(board, depth=2, alpha=-float('inf'), beta=float('inf'), maximizing_player=True)
+    score, best_move = minimax(board, depth=3, alpha=-float('inf'), beta=float('inf'), maximizing_player=True)
 
     if best_move is None:
         return board
@@ -148,9 +171,7 @@ def apply_move(board, move):
 
 def evaluate_board(board):
     # Midlertidig: Oliver skal erstatte dette med heuristik, eller bare brug whatever han kalder sin.
-    white_pieces = np.sum(board == "W")
-    black_pieces = np.sum(board == "B")
-    return white_pieces - black_pieces
+    return board_static_evaluation(board)
 
 def minimax(board, depth, alpha, beta, maximizing_player):
     if depth == 0 or game_over(board):
