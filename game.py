@@ -8,8 +8,7 @@ def legal_moves(start_row, start_col, board: np.ndarray):
     player = board[start_row, start_col]
     opponent = "W" if player == "B" else "B"
 
-    board_height = board.shape[0]
-    board_width = board.shape[1]
+    board_height, board_width = board.shape
 
     row = board[start_row]
     col = board[:,start_col]
@@ -24,17 +23,8 @@ def legal_moves(start_row, start_col, board: np.ndarray):
     anti_diag = np.rot90(board, k=3).diagonal(anti_offset)
     anti_diag_len = len(anti_diag)
 
-    pos_in_main = -1
-    if main_offset >= 0:
-        pos_in_main = start_row
-    elif main_offset < 0:
-        pos_in_main = start_col
-
-    pos_in_anti = -1
-    if anti_offset >= 0:
-        pos_in_anti = rot_row
-    elif anti_offset < 0:
-        pos_in_anti = rot_col
+    pos_in_main = start_row if start_col >= start_row else start_col
+    pos_in_anti = rot_row if rot_col >= rot_row else rot_col
 
     line_attributes = (
         (row, "row", board_width, start_col),
@@ -46,51 +36,30 @@ def legal_moves(start_row, start_col, board: np.ndarray):
     for line, type, length, pos in line_attributes:
         jumps = np.count_nonzero(line != "N")
 
-        forward = pos + jumps
-        in_bounds = forward < length
+        for direction in (1,-1):
+            dest = pos + jumps * direction
+            in_bounds = dest < length and dest >= 0
 
-        if in_bounds:
-            not_on_ally = line[forward] != player
-            if not_on_ally:
-                not_over_opponent = False
-                for i in range(pos+1, forward):
-                    if line[i] == opponent:
-                        break
-                else:
-                    not_over_opponent = True
+            if in_bounds:
+                not_on_ally = line[dest] != player
+                if not_on_ally:
+                    not_over_opponent = False
+                    for i in range(pos+1, dest):
+                        if line[i] == opponent:
+                            break
+                    else:
+                        not_over_opponent = True
 
-                if not_over_opponent:
-                    if type == "row":
-                        moves.append((start_row,forward))
-                    elif type == "col":
-                        moves.append((forward,start_col))
-                    elif type == "main_diag":
-                        moves.append((start_row+jumps,start_col+jumps))
-                    elif type == "anti_diag":
-                        moves.append((start_row-jumps,start_col+jumps))
+                    if not_over_opponent:
+                        if type == "row":
+                            moves.append((start_row,direction))
+                        elif type == "col":
+                            moves.append((direction,start_col))
+                        elif type == "main_diag":
+                            moves.append((start_row+jumps*direction,start_col+jumps*direction))
+                        elif type == "anti_diag":
+                            moves.append((start_row-jumps*direction,start_col+jumps*direction))
 
-        backwards = pos - jumps
-        in_bounds = backwards >= 0
-
-        if in_bounds:
-            not_on_ally = line[backwards] != player
-            if not_on_ally:
-                not_over_opponent = False
-                for i in range(pos-1, backwards, -1):
-                    if line[i] == opponent:
-                        break
-                else:
-                    not_over_opponent = True
-
-                if not_over_opponent:
-                    if type == "row":
-                        moves.append((start_row,backwards))
-                    elif type == "col":
-                        moves.append((backwards,start_col))
-                    elif type == "main_diag":
-                        moves.append((start_row-jumps,start_col-jumps))
-                    elif type == "anti_diag":
-                        moves.append((start_row+jumps,start_col-jumps))
     return moves
 
 def board_static_evaluation(board: np.ndarray) -> int:
