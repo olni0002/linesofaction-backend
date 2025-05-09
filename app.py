@@ -24,8 +24,15 @@ def get_board():
 def validate_move():
     board = request.get_json()
 
-    is_valid: bool = game.is_move_legal(board["start_row"], board["start_col"], board["dest_row"],
-                                        board["dest_col"], board["board"])
+    s_row = board["start_row"]
+    s_col = board["start_col"]
+    d_row = board["dest_row"]
+    d_col = board["dest_col"]
+
+    board = np.array(board["board"], dtype="U1")
+
+    is_valid: bool = game.is_move_legal(s_row, s_col, d_row, d_col, board)
+
     return {"is_valid": is_valid}
 
 @app.route('/api/computerMove', methods=['POST'])
@@ -36,6 +43,11 @@ def computer_move():
 
     board = list(map(lambda row: list(map(lambda field: None if field == "N" else field, row)), board.tolist()))
     return {'board': board}
+
+@app.route('/api/checkResult', methods=['POST'])
+def check_result():
+    board = np.array(request.get_json()["board"])
+    return {"winner": game.get_winner(board)}
 
 
 if __name__ == "__main__":
