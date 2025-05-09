@@ -1,6 +1,55 @@
 import numpy as np
 import copy
 
+def is_connected(board: np.ndarray, player) -> bool:
+    height, width = board.shape
+    visited = np.zeros(board.shape, dtype="bool")
+
+    # Directions for orthogonal and diagonal movement
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+
+    def check_adjacent(r, c):
+
+        visited[r, c] = True
+        # Explore all 8 possible directions
+        for dr, dc in directions:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < height and 0 <= nc < width and not visited[nr, nc] and board[nr, nc] == player:
+                check_adjacent(nr, nc)
+
+
+    start_row, start_col = -1, -1
+    found_start = False
+    for row in range(height):
+        for col in range(width):
+            if board[row,col] == player:
+                start_row, start_col = row, col
+                found_start = True
+                break
+
+        if found_start:
+            break
+
+    check_adjacent(start_row, start_col)
+
+    # Check if all occurrences of the player have been visited
+    all_connected = np.array_equal(visited, board == player)
+    return all_connected
+
+def get_winner(board: np.ndarray) -> str:
+    w_connected = is_connected(board, "W")
+    b_connected = is_connected(board, "B")
+
+    winner = "none"
+    if w_connected:
+        if b_connected:
+            winner = "tie"
+        else:
+            winner = "W"
+    elif b_connected:
+        winner = "B"
+
+    return winner
 
 def legal_moves(start_row, start_col, board: np.ndarray):
     moves = []
@@ -37,32 +86,31 @@ def legal_moves(start_row, start_col, board: np.ndarray):
         jumps = np.count_nonzero(line != "N")
 
         for direction in (1,-1):
-            dest = pos + jumps * direction
-            in_bounds = dest < length and dest >= 0
+            dir_step = jumps * direction
+            dest = pos + dir_step
+            in_bounds = 0 <= dest < length
 
-            if in_bounds:
-                not_on_ally = line[dest] != player
-                if not_on_ally:
-                    not_over_opponent = False
-                    for i in range(pos+1, dest):
-                        if line[i] == opponent:
-                            break
-                    else:
-                        not_over_opponent = True
+            if in_bounds and line[dest] != player:
+                not_over_opponent = False
+                for i in range(pos+direction, dest, direction):
+                    if line[i] == opponent:
+                        break
+                else:
+                    not_over_opponent = True
 
-                    if not_over_opponent:
-                        if type == "row":
-                            moves.append((start_row,direction))
-                        elif type == "col":
-                            moves.append((direction,start_col))
-                        elif type == "main_diag":
-                            moves.append((start_row+jumps*direction,start_col+jumps*direction))
-                        elif type == "anti_diag":
-                            moves.append((start_row-jumps*direction,start_col+jumps*direction))
+                if not_over_opponent:
+                    if type == "row":
+                        moves.append((start_row,dest))
+                    elif type == "col":
+                        moves.append((dest,start_col))
+                    elif type == "main_diag":
+                        moves.append((start_row+dir_step,start_col+dir_step))
+                    elif type == "anti_diag":
+                        moves.append((start_row-dir_step,start_col+dir_step))
 
     return moves
 
-def board_static_evaluation(board: np.ndarray) -> int:
+def board_static_evaluation(board: np.ndarray) -> float:
     field_values = np.array([
         [-80, -25, -20, -20, -20, -20, -25, -80],
         [-25,  10,  10,  10,  10,  10,  10, -25],
@@ -85,9 +133,7 @@ def board_static_evaluation(board: np.ndarray) -> int:
 
     return white_score - black_score
 
-def is_move_legal(start_row, start_col, dest_row, dest_col, board) -> bool:
-    board = np.array(board, dtype="U1")
-
+def is_move_legal(start_row, start_col, dest_row, dest_col, board: np.ndarray) -> bool:
     if (dest_row, dest_col) in legal_moves(start_row, start_col, board):
         return True
     else:
@@ -145,13 +191,19 @@ def apply_move(board, move):
     board_copy[start_row, start_col] = "N"
     return board_copy
 
-def evaluate_board(board):
-    # Midlertidig: Oliver skal erstatte dette med heuristik, eller bare brug whatever han kalder sin.
-    return board_static_evaluation(board)
-
 def minimax(board, depth, alpha, beta, maximizing_player):
-    if depth == 0 or game_over(board):
-        return evaluate_board(board), None
+
+    winner = get_winner(board)
+
+    if depth == 0 or winner != "none":
+        if winner == "none":
+            return (board_static_evaluation(board), None)
+        elif winner == "W":
+            return (float("inf"), None)
+        elif winner == "B":
+            return (float("-inf"), None)
+        elif winner == "tie":
+            return (0, None)
 
     best_move = None
 
@@ -179,9 +231,3 @@ def minimax(board, depth, alpha, beta, maximizing_player):
             if beta <= alpha: #Implementing alpha-beta pruning
                 break #Alpha cutoff
         return min_eval, best_move
-
-def game_over(board):
-    #Dummy version, vi skal lave et regelsæt ift gameover
-    white_pieces = np.sum(board == "W")
-    black_pieces = np.sum(board == "B")
-    return white_pieces == 0 or black_pieces == 0
