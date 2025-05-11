@@ -37,9 +37,11 @@ def validate_move():
 
 @app.route('/api/computerMove', methods=['POST'])
 def computer_move():
-    board = request.get_json()["board"]
+    data = request.get_json()
+    board = np.array(data["board"], dtype="U1")
+    computer_color = data.get("computer_color", "W")
 
-    board = game.computer_move(np.array(board, dtype="U1"))
+    board = game.computer_move(board, computer_color)
 
     board = list(map(lambda row: list(map(lambda field: None if field == "N" else field, row)), board.tolist()))
     return {'board': board}
@@ -48,6 +50,7 @@ def computer_move():
 def check_result():
     board = np.array(request.get_json()["board"])
     return {"winner": game.get_winner(board)}
+
 
 
 if __name__ == "__main__":

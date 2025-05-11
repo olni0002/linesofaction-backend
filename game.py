@@ -162,16 +162,18 @@ def is_move_legal(start_row, start_col, dest_row, dest_col, board: np.ndarray) -
 
 #     return board
 
-def computer_move(board):
+def computer_move(board, color="W"):
     board = np.array(board, dtype="U1")
-    score, best_move = minimax(board, depth=3, alpha=-float('inf'), beta=float('inf'), maximizing_player=True)
+    maximizing = True if color == "W" else False
+
+    score, best_move = minimax(board, depth=3, alpha=-float('inf'), beta=float('inf'), maximizing_player=maximizing)
 
     if best_move is None:
         return board
 
     (start_row, start_col), (dest_row, dest_col) = best_move
     board[start_row, start_col] = "N"
-    board[dest_row, dest_col] = "W"
+    board[dest_row, dest_col] = color
     return board
 
 def all_possible_moves(board, player):
