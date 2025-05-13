@@ -1,5 +1,9 @@
 import numpy as np
 import copy
+import time
+
+TIME_LIMIT = 5.0
+start_time = None
 
 def is_connected(board: np.ndarray, player) -> bool:
     height, width = board.shape
@@ -139,42 +143,55 @@ def is_move_legal(start_row, start_col, dest_row, dest_col, board: np.ndarray) -
     else:
         return False
 
-# def computer_move(board) -> np.ndarray:
-
-#     board = np.array(board, dtype="U1")
-#     piece_coordinates = []
-
-#     for row_index, row in enumerate(board):
-#         for col_index, field in enumerate(row):
-#             if board[row_index, col_index] == 'W':
-#                 piece_coordinates.append((row_index, col_index))
-
-#     moves = []
-#     for row_index, col_index in piece_coordinates:
-#         dest = legal_moves(row_index, col_index, board)
-
-#         moves.append((row_index, col_index, dest))
-
-#     best_move = moves[0]
-
-#     board[best_move[0],best_move[1]] = "N"
-#     board[best_move[2][0][0],best_move[2][0][1]] = "W"
-
-#     return board
 
 def computer_move(board, color="W"):
+    global start_time
+    start_time = time.time()
     board = np.array(board, dtype="U1")
-    maximizing = True if color == "W" else False
+    maximizing = color == "W"
 
-    score, best_move = minimax(board, depth=3, alpha=-float('inf'), beta=float('inf'), maximizing_player=maximizing)
+    best_score = -float("inf") if maximizing else float("inf")
+    best_move = None
+    depth = 1
+    reached_depth = 0
+
+    while True:
+        if time.time() - start_time >= TIME_LIMIT:
+            break
+
+        try:
+            score, move = minimax(board, depth, -float("inf"), float("inf"), maximizing)
+            if move is not None:
+                if (maximizing and score == float("inf")) or (not maximizing and score == float("-inf")):
+                    (start_row, start_col), (dest_row, dest_col) = move
+                    board[start_row, start_col] = "N"
+                    board[dest_row, dest_col] = color
+                    elapsed_time = round(time.time() - start_time, 2)
+                    return board, elapsed_time, depth
+
+                if score == best_score:
+                    break
+
+                best_score = score
+                best_move = move
+                reached_depth = depth
+
+        except TimeoutError:
+            break
+
+        if time.time() - start_time >= TIME_LIMIT:
+            break
+
+        depth += 1
 
     if best_move is None:
-        return board
+        return board, 0.0, 0
 
     (start_row, start_col), (dest_row, dest_col) = best_move
     board[start_row, start_col] = "N"
     board[dest_row, dest_col] = color
-    return board
+    elapsed_time = round(time.time() - start_time, 2)
+    return board, elapsed_time, reached_depth
 
 def all_possible_moves(board, player):
     board = np.array(board, dtype="U1")
@@ -194,6 +211,9 @@ def apply_move(board, move):
     return board_copy
 
 def minimax(board, depth, alpha, beta, maximizing_player):
+    global start_time
+    if time.time() - start_time >= TIME_LIMIT:
+        raise TimeoutError()
 
     winner = get_winner(board)
 

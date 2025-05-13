@@ -36,15 +36,19 @@ def validate_move():
     return {"is_valid": is_valid}
 
 @app.route('/api/computerMove', methods=['POST'])
-def computer_move():
+def computer_move_route():
     data = request.get_json()
     board = np.array(data["board"], dtype="U1")
     computer_color = data.get("computer_color", "W")
 
-    board = game.computer_move(board, computer_color)
+    board, time_taken, reached_depth = game.computer_move(board, computer_color)
 
     board = list(map(lambda row: list(map(lambda field: None if field == "N" else field, row)), board.tolist()))
-    return {'board': board}
+    return {
+        'board': board,
+        'time_taken': time_taken,
+        'depth': reached_depth
+    }
 
 @app.route('/api/checkResult', methods=['POST'])
 def check_result():
