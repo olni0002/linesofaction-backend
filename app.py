@@ -55,7 +55,23 @@ def check_result():
     board = np.array(request.get_json()["board"])
     return {"winner": game.get_winner(board)}
 
-
+@app.route('/api/getPossibleMoves', methods=['POST'])
+def get_possible_moves():
+    data = request.get_json()
+    board = np.array(data["board"], dtype="U1")
+    start_row = data["row"]
+    start_col = data["col"]
+    player_color = data["playerColor"]
+    
+    if board[start_row, start_col] != player_color:
+        return {"possibleMoves": []}
+    
+    moves = game.legal_moves(start_row, start_col, board)
+    
+    #Convert to list of coordinate pairs
+    valid_moves = [[int(move[0]), int(move[1])] for move in moves]
+    
+    return {"possibleMoves": valid_moves}
 
 if __name__ == "__main__":
     app.run()
