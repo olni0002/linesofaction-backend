@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import patch
 import numpy as np
-from game import minimax, all_possible_moves
+from linesofaction.server.game import minimax, all_possible_moves
 
 class Test(unittest.TestCase):
-    @patch("game.evaluate_board")
+    @patch("linesofaction.server.game.board_static_evaluation")
     def test_alpha_beta_pruning(self, mock_evaluate_board):
         print("Test is running!")  # Debug print statement
 

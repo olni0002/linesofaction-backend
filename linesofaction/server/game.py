@@ -3,7 +3,7 @@ import copy
 import time
 
 TIME_LIMIT = 5.0
-start_time = None
+start_time = float("inf")
 
 def is_connected(board: np.ndarray, player) -> bool:
     height, width = board.shape
