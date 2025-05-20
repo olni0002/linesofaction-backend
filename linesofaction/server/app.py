@@ -1,24 +1,11 @@
-#!/usr/bin/env python3
-
 from flask import Flask, request
 from flask_cors import CORS
 import numpy as np
 
-import game
-
-# Ændret til at den bruger 'W' og 'B' i stedet for '1' og '2' for at være konsistent med den øvrige kode
-start_board = np.full((8, 8), 'N', dtype="U1")
-start_board[0, 1:-1] = 'W'
-start_board[-1, 1:-1] = 'W'
-start_board[1:-1, 0] = 'B'
-start_board[1:-1, -1] = 'B'
+from . import game
 
 app = Flask(__name__)
 CORS(app)
-
-@app.route('/api/board/')
-def get_board():
-    return {'board': start_board.tolist()}
 
 @app.route('/api/validateMove', methods=['POST'])
 def validate_move():
@@ -62,16 +49,13 @@ def get_possible_moves():
     start_row = data["row"]
     start_col = data["col"]
     player_color = data["playerColor"]
-    
+
     if board[start_row, start_col] != player_color:
         return {"possibleMoves": []}
-    
+
     moves = game.legal_moves(start_row, start_col, board)
-    
+
     #Convert to list of coordinate pairs
     valid_moves = [[int(move[0]), int(move[1])] for move in moves]
-    
-    return {"possibleMoves": valid_moves}
 
-if __name__ == "__main__":
-    app.run()
+    return {"possibleMoves": valid_moves}
