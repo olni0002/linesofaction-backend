@@ -1,7 +1,7 @@
 # Lines of Action
 
 ## Required software
-- [Python 3](https://www.python.org/downloads/)
+- [Python](https://www.python.org/downloads/) version 3.6 or newer
 - [Git](https://git-scm.com/) only for cloning the repo
 
 ## Running
