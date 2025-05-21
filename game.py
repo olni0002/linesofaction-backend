@@ -4,6 +4,7 @@ import time
 
 TIME_LIMIT = 5.0
 start_time = None
+node_count = 0
 
 def is_connected(board: np.ndarray, player) -> bool:
     height, width = board.shape
@@ -145,8 +146,9 @@ def is_move_legal(start_row, start_col, dest_row, dest_col, board: np.ndarray) -
 
 
 def computer_move(board, color="W"):
-    global start_time
+    global start_time, node_count
     start_time = time.time()
+    node_count = 0
     board = np.array(board, dtype="U1")
     maximizing = color == "W"
 
@@ -167,7 +169,7 @@ def computer_move(board, color="W"):
                     board[start_row, start_col] = "N"
                     board[dest_row, dest_col] = color
                     elapsed_time = round(time.time() - start_time, 2)
-                    return board, elapsed_time, depth
+                    return board, elapsed_time, depth, node_count
 
                 if score == best_score:
                     break
@@ -185,13 +187,13 @@ def computer_move(board, color="W"):
         depth += 1
 
     if best_move is None:
-        return board, 0.0, 0
+        return board, 0.0, 0, 0
 
     (start_row, start_col), (dest_row, dest_col) = best_move
     board[start_row, start_col] = "N"
     board[dest_row, dest_col] = color
     elapsed_time = round(time.time() - start_time, 2)
-    return board, elapsed_time, reached_depth
+    return board, elapsed_time, reached_depth, node_count
 
 def all_possible_moves(board, player):
     board = np.array(board, dtype="U1")
@@ -211,9 +213,11 @@ def apply_move(board, move):
     return board_copy
 
 def minimax(board, depth, alpha, beta, maximizing_player):
-    global start_time
+    global start_time, node_count
     if time.time() - start_time >= TIME_LIMIT:
         raise TimeoutError()
+    
+    node_count += 1
 
     winner = get_winner(board)
 
