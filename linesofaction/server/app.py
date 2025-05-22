@@ -28,13 +28,14 @@ def computer_move_route():
     board = np.array(data["board"], dtype="U1")
     computer_color = data.get("computer_color", "W")
 
-    board, time_taken, reached_depth = game.computer_move(board, computer_color)
+    board, time_taken, reached_depth, node_count = game.computer_move(board, computer_color)
 
     board = list(map(lambda row: list(map(lambda field: None if field == "N" else field, row)), board.tolist()))
     return {
         'board': board,
         'time_taken': time_taken,
-        'depth': reached_depth
+        'depth': reached_depth,
+        'node_count': node_count
     }
 
 @app.route('/api/checkResult', methods=['POST'])
