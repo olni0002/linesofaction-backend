@@ -34,6 +34,7 @@ or run the application as a module
 ```bash
 python3 -m linesofaction
 ```
+Use the environment variable SERVER_PORT to start the server on a custom port (default: 5000).
 
 You have now successfully started the server and need to run the frontend to play the game
 ```bash
